@@ -16,6 +16,6 @@ But smiling when sending you to the gulag.
   * Makes the player enjoy a [Red Army Choir masterpiece](https://www.youtube.com/watch?v=zgKazTrhXmI) while approaching
   * Chases the player until death by kicking you to the gulag occurs
 
-### FARAOH
+### FARAOH and Nemesis
 
 Same features as Stalin's Nextbot, but with an animated texture and multiple sounds shouted while chasing.
