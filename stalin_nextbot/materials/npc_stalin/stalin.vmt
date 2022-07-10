@@ -1,0 +1,15 @@
+"UnlitGeneric"
+{
+	"$basetexture" "npc_stalin/stalin"
+	"$alphatest" 1
+
+	"Proxies"
+	{
+		"AnimatedTexture"
+		{
+			"animatedTextureVar"			"$basetexture"
+			"animatedTextureFrameNumVar"	"$frame"
+			"animatedTextureFrameRate"		"10"
+		}
+	}
+}

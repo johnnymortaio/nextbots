@@ -1,0 +1,6 @@
+"UnlitGeneric"
+{
+	"$basetexture" "npc_stalin/stalin"
+	"$translucent" 1
+	"$vertexalpha" 1
+}

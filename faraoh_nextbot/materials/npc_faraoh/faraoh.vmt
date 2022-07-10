@@ -1,0 +1,15 @@
+"UnlitGeneric"
+{
+	"$basetexture" "npc_faraoh/faraoh"
+	"$alphatest" 1
+
+	"Proxies"
+	{
+		"AnimatedTexture"
+		{
+			"animatedTextureVar"			"$basetexture"
+			"animatedTextureFrameNumVar"	"$frame"
+			"animatedTextureFrameRate"		"10"
+		}
+	}
+}
