@@ -1,0 +1,6 @@
+"UnlitGeneric"
+{
+	"$basetexture" "npc_pingu/pingu_icon"
+	"$translucent" 1
+	"$vertexalpha" 1
+}

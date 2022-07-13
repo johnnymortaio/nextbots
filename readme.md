@@ -28,6 +28,14 @@ But smiling when sending you to the gulag.
 
 Same features as Stalin's Nextbot, but with an animated texture and multiple sounds shouted while chasing.
 
+### Cursed Pingu
+
+This is cursed.
+
+Do not try it.
+
+![Noot noot](https://media1.giphy.com/media/mVV95S4e083h4HeGBr/giphy.gif?cid=790b7611c64ede89f31888d62ebfb4532455f785c55642f2&rid=giphy.gif&ct=g)
+
 ## Development
 
 ### Setup

@@ -1,0 +1,15 @@
+"UnlitGeneric"
+{
+	"$basetexture" "npc_pingu/pingu_still"
+	"$alphatest" 1
+
+	"Proxies"
+	{
+		"AnimatedTexture"
+		{
+			"animatedTextureVar"			"$basetexture"
+			"animatedTextureFrameNumVar"	"$frame"
+			"animatedTextureFrameRate"		"1"
+		}
+	}
+}
