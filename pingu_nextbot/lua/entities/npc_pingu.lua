@@ -34,7 +34,8 @@ ENT.ChaseSounds = {
 	Sound("npc_pingu/pingu_voice_9.mp3"),
 	Sound("npc_pingu/pingu_voice_10.mp3"),
 }
-local chaseMusic = Sound("npc_pingu/pingu_walk.mp3")
+local chaseMusic = Sound("npc_pingu/earthquake.mp3")
+local walkingMusic = Sound("npc_pingu/pingu_walk_loop.wav")
 
 local workshopID = "2834879791"
 
@@ -45,11 +46,11 @@ function ENT:SetupDataTables()
 	self:NetworkVar( "Bool", 1, "Moving" )
 	if ( SERVER ) then
 		self:SetRaging( false )
-		self:SetMoving( true )
+		self:SetMoving( false )
 	end
 end
 
-ENT.lastTrackedPos = Vector(0, 0, 0)
+local REPEAT_FOREVER = 0
 
 if SERVER then -- SERVER --
 
@@ -116,6 +117,7 @@ local TAUNT_INTERVAL = 1.2
 local PATH_INFRACTION_TIMEOUT = 5
 local CHASE_SOUND_INTERVAL = 8
 local SPEED_THRESHOLD = 1
+local SPEED_THRESHOLD_SQUARED = SPEED_THRESHOLD * SPEED_THRESHOLD
 
 if npc_pingu_force_download:GetBool() then
 	resource.AddWorkshop(workshopID)
@@ -411,6 +413,9 @@ ENT.LastChaseSound = 0
 ENT.CurrentTarget = nil
 ENT.HidingSpot = nil
 
+ENT.lastTrackedPos = Vector(0, 0, 0)
+ENT.StepsSound = nil
+
 function ENT:Initialize()
 	-- Spawn effect resets render override. Bug!!!
 	self:SetSpawnEffect(false)
@@ -442,6 +447,11 @@ function ENT:Initialize()
 	-- This isn't really important because we reset it all the time anyway.
 	self.loco:SetJumpHeight(300)
 
+	if self.StepSound == nul then
+		self.StepsSound = CreateSound(self, walkingMusic)
+		self.StepsSound:Stop()
+	end
+
 	-- Rebuild caches.
 	self:OnReloaded()
 end
@@ -460,6 +470,35 @@ end
 function ENT:OnRemove()
 	-- Give up our hiding spot when we're deleted.
 	self:ClaimHidingSpot(nil)
+	if self.StepsSound ~= nil then
+		self.StepsSound:Stop()
+	end
+end
+
+function ENT:UpdateMovingStatus(delta)
+	local currentPos = self:GetPos()
+	local speed = (currentPos - self.lastTrackedPos):Length2DSqr() / (delta * delta)
+	self.lastTrackedPos = currentPos
+	if ( speed < SPEED_THRESHOLD_SQUARED ) then
+		if self:GetMoving() then
+			self:SetMoving( false )
+		end
+	elseif not self:GetMoving() then
+		self:SetMoving( true )
+	end
+end
+
+function ENT:UpdateStepsSound()
+	if self:GetMoving() then
+		if not self.StepsSound:IsPlaying() then
+			local pitch = math.Clamp(game.GetTimeScale() * 100, 50, 255)
+			self.StepsSound:PlayEx(1, pitch)
+		end
+	else
+		if self.StepsSound:IsPlaying() then
+			self.StepsSound:Stop()
+		end
+	end
 end
 
 function ENT:GetNearestTarget()
@@ -519,9 +558,7 @@ function ENT:AttackNearbyTargets(radius)
 				if IsValid(phys) then
 					phys:Wake()
 					local hitOffset = vehicle:NearestPoint(hitSource)
-					phys:ApplyForceOffset(hitDirection
-						* (attackForce * phys:GetMass()),
-						hitOffset)
+					phys:ApplyForceOffset(hitDirection * (attackForce * phys:GetMass()), hitOffset)
 				end
 				vehicle:TakeDamage(math.max(1e8, ent:Health()), self, self)
 
@@ -545,8 +582,7 @@ function ENT:AttackNearbyTargets(radius)
 			dmgInfo:SetInflictor(self)
 			dmgInfo:SetDamage(1e8)
 			dmgInfo:SetDamagePosition(self:GetPos())
-			dmgInfo:SetDamageForce((hitDirection * attackForce
-				+ vector_up * 500) * 100)
+			dmgInfo:SetDamageForce((hitDirection * attackForce + vector_up * 500) * 100)
 			ent:TakeDamageInfo(dmgInfo)
 
 			local newHealth = ent:Health()
@@ -720,7 +756,7 @@ function ENT:BehaveStart()
 end
 
 local ai_disabled = GetConVar("ai_disabled")
-function ENT:BehaveUpdate() --TODO: Split this up more. Eww.
+function ENT:BehaveUpdate(delta) --TODO: Split this up more. Eww.
 	if ai_disabled:GetBool() then
 		-- We may be a bot, but we're still an "NPC" at heart.
 		return
@@ -745,20 +781,8 @@ function ENT:BehaveUpdate() --TODO: Split this up more. Eww.
 		self.LastTargetSearch = currentTime
 	end
 
-	local currentPos = self:GetPos()
-	local speed = (currentPos - self.lastTrackedPos):Length2DSqr()
-	self.lastTrackedPos = currentPos
-	if ( speed < SPEED_THRESHOLD ) then
-		if ( self:GetMoving() ) then
-			self:SetMoving( false )
-		end
-	elseif ( not (self:GetMoving()) ) then
-		self:SetMoving( true )
-	end
-
-	if ( IsValid(self.CurrentTarget) and not self:GetMoving() ) then
-		self:SetMoving( true )
-	end
+	self:UpdateMovingStatus(delta)
+	self:UpdateStepsSound()
 
 	-- Do we have a target?
 	if IsValid(self.CurrentTarget) then
@@ -909,18 +933,24 @@ local npc_pingu_music_volume =
 -- the music will continue where it left off.
 local MUSIC_RESTART_DELAY = 2
 
--- Beyond this distance, pingus do not count to music volume.
-local MUSIC_CUTOFF_DISTANCE = 1000
+local MUSIC_CUTOFF_DISTANCE = 2000
 
--- Max volume is achieved when MUSIC_pingu_PANIC_COUNT pingus are this close,
--- or an equivalent score.
-local MUSIC_PANIC_DISTANCE = 200
+local MUSIC_LOUD_DISTANCE = 200
 
- -- That's a lot of pingu.
-local MUSIC_pingu_PANIC_COUNT = 8
+local MIN_VOLUME = 0.01
 
-local MUSIC_pingu_MAX_DISTANCE_SCORE =
-	(MUSIC_CUTOFF_DISTANCE - MUSIC_PANIC_DISTANCE) * MUSIC_pingu_PANIC_COUNT
+local MUSIC_RANGE = MUSIC_CUTOFF_DISTANCE - MUSIC_LOUD_DISTANCE
+
+local MAX_DISTANCE = MUSIC_CUTOFF_DISTANCE
+
+local function musicVolume(distance)
+	if distance > MUSIC_CUTOFF_DISTANCE then
+		return 0
+	end
+	local r = math.max(0, distance - MUSIC_LOUD_DISTANCE) / MUSIC_RANGE
+	local v = 1 / (1 + (r * r) / MIN_VOLUME)
+	return math.min(1, v)
+end
 
 local function updatePanicMusic()
 	if #ents.FindByClass("npc_pingu") == 0 then
@@ -935,74 +965,52 @@ local function updatePanicMusic()
 		return
 	end
 
-	if panicMusic == nil then
-		if IsValid(LocalPlayer()) then
-			panicMusic = CreateSound(LocalPlayer(), chaseMusic)
-			panicMusic:Stop()
-		else
-			return -- No LocalPlayer yet!
-		end
-	end
-
-	local userVolume = math.Clamp(npc_pingu_music_volume:GetFloat(), 0, 1)
-	if userVolume == 0 or not IsValid(LocalPlayer()) then
-		panicMusic:Stop()
+	if not IsValid(LocalPlayer()) then
 		return
 	end
 
-	local totalDistanceScore = 0
-	local moving = false
-	local nearEntities = ents.FindInSphere(LocalPlayer():GetPos(), 1000)
+	if panicMusic == nil then
+		panicMusic = CreateSound(LocalPlayer(), chaseMusic)
+		panicMusic:Stop()
+	end
+
+	local minDistance = MAX_DISTANCE
+	local nearEntities = ents.FindInSphere(LocalPlayer():GetPos(), MAX_DISTANCE)
 	for _, ent in pairs(nearEntities) do
 		if IsValid(ent) and ent:GetClass() == "npc_pingu" then
-			local distanceScore = math.max(0, MUSIC_CUTOFF_DISTANCE
-				- LocalPlayer():GetPos():Distance(ent:GetPos()))
-			totalDistanceScore = totalDistanceScore + distanceScore
-			moving = ent:GetMoving()
+			local distance = LocalPlayer():GetPos():Distance(ent:GetPos())
+			minDistance = math.min(minDistance, distance)
 		end
 	end
-
-	if ( not moving ) then
-		panicMusic:Stop()
-		return
-	end
-
-	local musicVolume = math.min(1,
-		totalDistanceScore / MUSIC_pingu_MAX_DISTANCE_SCORE)
 
 	local shouldRestartMusic = (CurTime() - lastPanic >= MUSIC_RESTART_DELAY)
-	if musicVolume > 0 then
+	local userVolume = math.Clamp(npc_pingu_music_volume:GetFloat(), 0, 1)
+	local musicVolume = musicVolume(minDistance) * userVolume
+	if musicVolume == 0 then
 		if shouldRestartMusic then
-			panicMusic:Play()
+			panicMusic:Stop()
 		end
-
+	else
 		if not LocalPlayer():Alive() then
 			-- Quiet down so we can hear pingu taunt us.
 			musicVolume = musicVolume / 4
 		end
+		musicVolume = math.max(MIN_VOLUME, musicVolume)
 
+		if shouldRestartMusic then
+			panicMusic:Play()
+		end
 		lastPanic = CurTime()
-	elseif shouldRestartMusic then
-		panicMusic:Stop()
-		return
-	else
-		musicVolume = 0
 	end
 
-	musicVolume = math.max(0.01, musicVolume * userVolume)
-
-	panicMusic:Play()
-
-	-- Just for kicks.
-	panicMusic:ChangePitch(math.Clamp(game.GetTimeScale() * 100, 50, 255), 0)
+	local pitch = math.Clamp(game.GetTimeScale() * 100, 50, 255)
 	panicMusic:ChangeVolume(musicVolume, 0)
+	panicMusic:ChangePitch(pitch, 0)
 end
 
-local REPEAT_FOREVER = 0
 local function startTimer()
 	if not timer.Exists("pinguPanicMusicUpdate") then
-		timer.Create("pinguPanicMusicUpdate", 0.05, REPEAT_FOREVER,
-			updatePanicMusic)
+		timer.Create("pinguPanicMusicUpdate", 0.05, REPEAT_FOREVER, updatePanicMusic)
 		DevPrint(4, "Beginning music timer.")
 	end
 end
