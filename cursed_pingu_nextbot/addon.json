@@ -3,7 +3,8 @@
   "type": "npc",
   "tags": [
     "fun",
-    "scenic"
+    "scenic",
+    "cartoon"
   ],
   "ignore": []
 }

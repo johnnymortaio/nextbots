@@ -13,29 +13,29 @@ ENT.PhysgunDisabled = true
 ENT.AutomaticFrameAdvance = false
 -- REMINDER: sounds MUST be at a bitrate of 44100 HZ. If they are not, then the sound will not play.
 ENT.JumpSound = {
-	Sound("npc_pingu/pingu_voice_11.mp3")
+	Sound("npc_cursed_pingu/pingu_voice_11.mp3")
 }
 ENT.JumpHighSound = {
-	Sound("npc_pingu/pingu_voice_11.mp3")
+	Sound("npc_cursed_pingu/pingu_voice_11.mp3")
 }
 ENT.TauntSounds = {
-	Sound("npc_pingu/noot_noot.mp3"),
-	Sound("npc_pingu/noot_noot_loud.mp3"),
+	Sound("npc_cursed_pingu/noot_noot.mp3"),
+	Sound("npc_cursed_pingu/noot_noot_loud.mp3"),
 }
 ENT.ChaseSounds = {
-	Sound("npc_pingu/pingu_voice_1.mp3"),
-	Sound("npc_pingu/pingu_voice_2.mp3"),
-	Sound("npc_pingu/pingu_voice_3.mp3"),
-	Sound("npc_pingu/pingu_voice_4.mp3"),
-	Sound("npc_pingu/pingu_voice_5.mp3"),
-	Sound("npc_pingu/pingu_voice_6.mp3"),
-	Sound("npc_pingu/pingu_voice_7.mp3"),
-	Sound("npc_pingu/pingu_voice_8.mp3"),
-	Sound("npc_pingu/pingu_voice_9.mp3"),
-	Sound("npc_pingu/pingu_voice_10.mp3"),
+	Sound("npc_cursed_pingu/pingu_voice_1.mp3"),
+	Sound("npc_cursed_pingu/pingu_voice_2.mp3"),
+	Sound("npc_cursed_pingu/pingu_voice_3.mp3"),
+	Sound("npc_cursed_pingu/pingu_voice_4.mp3"),
+	Sound("npc_cursed_pingu/pingu_voice_5.mp3"),
+	Sound("npc_cursed_pingu/pingu_voice_6.mp3"),
+	Sound("npc_cursed_pingu/pingu_voice_7.mp3"),
+	Sound("npc_cursed_pingu/pingu_voice_8.mp3"),
+	Sound("npc_cursed_pingu/pingu_voice_9.mp3"),
+	Sound("npc_cursed_pingu/pingu_voice_10.mp3"),
 }
-local chaseMusic = Sound("npc_pingu/earthquake.mp3")
-local walkingMusic = Sound("npc_pingu/pingu_walk_loop.wav")
+local chaseMusic = Sound("npc_cursed_pingu/earthquake.mp3")
+local walkingMusic = Sound("npc_cursed_pingu/pingu_walk_loop.wav")
 
 local workshopID = "2834879791"
 
@@ -54,63 +54,63 @@ local REPEAT_FOREVER = 0
 
 if SERVER then -- SERVER --
 
-local npc_pingu_acquire_distance =
-	CreateConVar("npc_pingu_acquire_distance", 100000, FCVAR_NONE,
-	"The maximum distance at which pingu will chase a target.")
+local npc_cursed_pingu_acquire_distance =
+	CreateConVar("npc_cursed_pingu_acquire_distance", 100000, FCVAR_NONE,
+	"The maximum distance at which Cursed Pingu will chase a target.")
 
-local npc_pingu_spawn_protect =
-	CreateConVar("npc_pingu_spawn_protect", 1, FCVAR_NONE,
-	"If set to 1, pingu will not target players or hide within 200 units of \z
+local npc_cursed_pingu_spawn_protect =
+	CreateConVar("npc_cursed_pingu_spawn_protect", 1, FCVAR_NONE,
+	"If set to 1, Cursed Pingu will not target players or hide within 200 units of \z
 	a spawn point.")
 
-local npc_pingu_attack_distance =
-	CreateConVar("npc_pingu_attack_distance", 80, FCVAR_NONE,
-	"The reach of pingu's attack.")
+local npc_cursed_pingu_attack_distance =
+	CreateConVar("npc_cursed_pingu_attack_distance", 80, FCVAR_NONE,
+	"The reach of Cursed Pingu's attack.")
 
-local npc_pingu_attack_interval =
-	CreateConVar("npc_pingu_attack_interval", 0.2, FCVAR_NONE,
-	"The delay between pingu's attacks.")
+local npc_cursed_pingu_attack_interval =
+	CreateConVar("npc_cursed_pingu_attack_interval", 0.2, FCVAR_NONE,
+	"The delay between Cursed Pingu's attacks.")
 
-local npc_pingu_attack_force =
-	CreateConVar("npc_pingu_attack_force", 800, FCVAR_NONE,
-	"The physical force of pingu's attack. Higher values throw things \z
+local npc_cursed_pingu_attack_force =
+	CreateConVar("npc_cursed_pingu_attack_force", 800, FCVAR_NONE,
+	"The physical force of Cursed Pingu's attack. Higher values throw things \z
 	farther.")
 
-local npc_pingu_smash_props =
-	CreateConVar("npc_pingu_smash_props", 1, FCVAR_NONE,
-	"If set to 1, pingu will punch through any props placed in their way.")
+local npc_cursed_pingu_smash_props =
+	CreateConVar("npc_cursed_pingu_smash_props", 1, FCVAR_NONE,
+	"If set to 1, Cursed Pingu will punch through any props placed in their way.")
 
-local npc_pingu_allow_jump =
-	CreateConVar("npc_pingu_allow_jump", 1, FCVAR_NONE,
-	"If set to 1, pingu will be able to jump.")
+local npc_cursed_pingu_allow_jump =
+	CreateConVar("npc_cursed_pingu_allow_jump", 1, FCVAR_NONE,
+	"If set to 1, Cursed Pingu will be able to jump.")
 
-local npc_pingu_hiding_scan_interval =
-	CreateConVar("npc_pingu_hiding_scan_interval", 3, FCVAR_NONE,
-	"pingu will only seek out hiding places every X seconds. This can be an \z
+local npc_cursed_pingu_hiding_scan_interval =
+	CreateConVar("npc_cursed_pingu_hiding_scan_interval", 3, FCVAR_NONE,
+	"Cursed Pingu will only seek out hiding places every X seconds. This can be an \z
 	expensive operation, so it is not recommended to lower this too much. \z
-	However, if distant pingus are not hiding from you quickly enough, you \z
+	However, if distant Cursed Pingus are not hiding from you quickly enough, you \z
 	may consider lowering this a small amount.")
 
-local npc_pingu_hiding_repath_interval =
-	CreateConVar("npc_pingu_hiding_repath_interval", 1, FCVAR_NONE,
-	"The path to pingu's hiding spot will be redetermined every X seconds.")
+local npc_cursed_pingu_hiding_repath_interval =
+	CreateConVar("npc_cursed_pingu_hiding_repath_interval", 1, FCVAR_NONE,
+	"The path to Cursed Pingu's hiding spot will be redetermined every X seconds.")
 
-local npc_pingu_chase_repath_interval =
-	CreateConVar("npc_pingu_chase_repath_interval", 0.1, FCVAR_NONE,
-	"The path to and position of pingu's target will be redetermined every \z
+local npc_cursed_pingu_chase_repath_interval =
+	CreateConVar("npc_cursed_pingu_chase_repath_interval", 0.1, FCVAR_NONE,
+	"The path to and position of Cursed Pingu's target will be redetermined every \z
 	X seconds.")
 
-local npc_pingu_expensive_scan_interval =
-	CreateConVar("npc_pingu_expensive_scan_interval", 1, FCVAR_NONE,
+local npc_cursed_pingu_expensive_scan_interval =
+	CreateConVar("npc_cursed_pingu_expensive_scan_interval", 1, FCVAR_NONE,
 	"Slightly expensive operations (distance calculations and entity \z
 	searching) will occur every X seconds.")
 
-local npc_pingu_force_download =
-	CreateConVar("npc_pingu_force_download", 1, FCVAR_ARCHIVE,
-	"If set to 1, clients will be forced to download pingu resources \z
+local npc_cursed_pingu_force_download =
+	CreateConVar("npc_cursed_pingu_force_download", 1, FCVAR_ARCHIVE,
+	"If set to 1, clients will be forced to download Cursed Pingu resources \z
 	(restart required after changing).\n\z
 	WARNING: If this option is disabled, clients will be unable to see or \z
-	hear pingu!")
+	hear Cursed Pingu!")
 
  -- So we don't spam voice TOO much.
 local TAUNT_INTERVAL = 1.2
@@ -119,12 +119,12 @@ local CHASE_SOUND_INTERVAL = 8
 local SPEED_THRESHOLD = 1
 local SPEED_THRESHOLD_SQUARED = SPEED_THRESHOLD * SPEED_THRESHOLD
 
-if npc_pingu_force_download:GetBool() then
+if npc_cursed_pingu_force_download:GetBool() then
 	resource.AddWorkshop(workshopID)
 end
 
-util.AddNetworkString("pingu_nag")
-util.AddNetworkString("pingu_navgen")
+util.AddNetworkString("cursed_pingu_nag")
+util.AddNetworkString("cursed_pingu_navgen")
 
  -- Pathfinding is only concerned with static geometry anyway.
 local trace = {
@@ -158,10 +158,10 @@ local function isPositionExposed(pos)
 	return false
 end
 
-local VECTOR_pingu_HEIGHT = Vector(0, 0, 96)
+local VECTOR_cursed_pingu_HEIGHT = Vector(0, 0, 96)
 local function isPointSuitableForHiding(point)
 	trace.start = point
-	trace.endpos = point + VECTOR_pingu_HEIGHT
+	trace.endpos = point + VECTOR_cursed_pingu_HEIGHT
 	local tr = util.TraceLine(trace)
 
 	return (not tr.Hit)
@@ -192,7 +192,7 @@ local function buildHidingSpotCache()
 		end
 	end
 
-	print(string.format("npc_pingu: found %d suitable (%d unsuitable) hiding \z
+	print(string.format("npc_cursed_pingu: found %d suitable (%d unsuitable) hiding \z
 		places in %d areas over %.2fms!", goodSpots, badSpots, #areas,
 		(SysTime() - rStart) * 1000))
 end
@@ -208,21 +208,21 @@ local function isValidTarget(ent)
 		return ent:Alive()
 	end
 
-	-- Ignore dead NPCs, other pingus, and dummy NPCs.
+	-- Ignore dead NPCs, other Cursed Pingus, and dummy NPCs.
 	local class = ent:GetClass()
 	return (ent:IsNPC()
 		and ent:Health() > 0
-		and class ~= "npc_pingu"
+		and class ~= "npc_cursed_pingu"
 		and not class:find("bullseye"))
 end
 
-hook.Add("PlayerSpawnedNPC", "pinguMissingNavmeshNag", function(ply, ent)
+hook.Add("PlayerSpawnedNPC", "cursed_pinguMissingNavmeshNag", function(ply, ent)
 	if not IsValid(ent) then return end
-	if ent:GetClass() ~= "npc_pingu" then return end
+	if ent:GetClass() ~= "npc_cursed_pingu" then return end
 	if navmesh.GetNavAreaCount() > 0 then return end
 
-	-- Try to explain why pingu isn't working.
-	net.Start("pingu_nag")
+	-- Try to explain why Cursed Pingu isn't working.
+	net.Start("cursed_pingu_nag")
 	net.Send(ply)
 end)
 
@@ -231,9 +231,9 @@ local function navEndGenerate()
 	local timeElapsedStr = string.NiceTime(SysTime() - generateStart)
 
 	if not navmesh.IsGenerating() then
-		print("npc_pingu: Navmesh generation completed in " .. timeElapsedStr)
+		print("npc_cursed_pingu: Navmesh generation completed in " .. timeElapsedStr)
 	else
-		print("npc_pingu: Navmesh generation aborted after " .. timeElapsedStr)
+		print("npc_cursed_pingu: Navmesh generation aborted after " .. timeElapsedStr)
 	end
 
 	-- Turn this back off.
@@ -320,7 +320,7 @@ local function navGenerate()
 	addEntitiesToSet(seeds, GAMEMODE.SpawnPoints or {})
 
 	if next(seeds, nil) == nil then
-		print("npc_pingu: Couldn't find any places to seed nav_generate")
+		print("npc_cursed_pingu: Couldn't find any places to seed nav_generate")
 		return false
 	end
 
@@ -336,17 +336,17 @@ local function navGenerate()
 		local tr = util.TraceLine(trace)
 
 		if not tr.StartSolid and tr.Hit then
-			print(string.format("npc_pingu: Adding seed %s at %s", seed, pos))
+			print(string.format("npc_cursed_pingu: Adding seed %s at %s", seed, pos))
 			navmesh.AddWalkableSeed(tr.HitPos, tr.HitNormal)
 		else
-			print(string.format("npc_pingu: Couldn't add seed %s at %s", seed,
+			print(string.format("npc_cursed_pingu: Couldn't add seed %s at %s", seed,
 				pos))
 		end
 	end
 
 	-- The least we can do is ensure they don't have to listen to this noise.
-	for _, pingu in pairs(ents.FindByClass("npc_pingu")) do
-		pingu:Remove()
+	for _, cursed_pingu in pairs(ents.FindByClass("npc_cursed_pingu")) do
+		cursed_pingu:Remove()
 	end
 
 	-- This isn't strictly necessary since we just added EVERY spawnpoint as a
@@ -357,16 +357,16 @@ local function navGenerate()
 
 	if navmesh.IsGenerating() then
 		generateStart = SysTime()
-		hook.Add("ShutDown", "pinguNavGen", navEndGenerate)
+		hook.Add("ShutDown", "cursed_pinguNavGen", navEndGenerate)
 	else
-		print("npc_pingu: nav_generate failed to initialize")
+		print("npc_cursed_pingu: nav_generate failed to initialize")
 		navmesh.ClearWalkableSeeds()
 	end
 
 	return navmesh.IsGenerating()
 end
 
-concommand.Add("npc_pingu_learn", function(ply, cmd, args)
+concommand.Add("npc_cursed_pingu_learn", function(ply, cmd, args)
 	if navmesh.IsGenerating() then
 		return
 	end
@@ -374,9 +374,9 @@ concommand.Add("npc_pingu_learn", function(ply, cmd, args)
 	-- Rcon or single-player only.
 	local isConsole = (ply:EntIndex() == 0)
 	if game.SinglePlayer() then
-		print("npc_pingu: Beginning nav_generate requested by " .. ply:Name())
+		print("npc_cursed_pingu: Beginning nav_generate requested by " .. ply:Name())
 
-		-- Disable expensive computations in single-player. pingu doesn't use
+		-- Disable expensive computations in single-player. Cursed Pingu doesn't use
 		-- their results, and it consumes a massive amount of time and CPU.
 		-- We'd do this on dedicated servers as well, except that sv_cheats
 		-- needs to be enabled in order to disable visibility computations.
@@ -386,7 +386,7 @@ concommand.Add("npc_pingu_learn", function(ply, cmd, args)
 		-- Enable developer mode so we can see console messages in the corner.
 		RunConsoleCommand("developer", "1")
 	elseif isConsole then
-		print("npc_pingu: Beginning nav_generate requested by server console")
+		print("npc_cursed_pingu: Beginning nav_generate requested by server console")
 	else
 		return
 	end
@@ -396,7 +396,7 @@ concommand.Add("npc_pingu_learn", function(ply, cmd, args)
 	-- If it fails, only the person who started it needs to know.
 	local recipients = (success and player.GetHumans() or {ply})
 
-	net.Start("pingu_navgen")
+	net.Start("cursed_pingu_navgen")
 		net.WriteBool(success)
 	net.Send(recipients)
 end)
@@ -503,7 +503,7 @@ end
 
 function ENT:GetNearestTarget()
 	-- Only target entities within the acquire distance.
-	local maxAcquireDist = npc_pingu_acquire_distance:GetInt()
+	local maxAcquireDist = npc_cursed_pingu_acquire_distance:GetInt()
 	local maxAcquireDistSqr = maxAcquireDist * maxAcquireDist
 	local myPos = self:GetPos()
 	local acquirableEntities = ents.FindInSphere(myPos, maxAcquireDist)
@@ -517,9 +517,9 @@ function ENT:GetNearestTarget()
 		if not isValidTarget(ent) then continue end
 
 		-- Spawn protection! Ignore players within 200 units of a spawn point
-		-- if `npc_pingu_spawn_protect' = 1.
+		-- if `npc_cursed_pingu_spawn_protect' = 1.
 		--TODO: Only for the first few seconds?
-		if npc_pingu_spawn_protect:GetBool() and ent:IsPlayer()
+		if npc_cursed_pingu_spawn_protect:GetBool() and ent:IsPlayer()
 			and isPointNearSpawn(ent:GetPos(), 200)
 		then
 			continue
@@ -538,7 +538,7 @@ end
 
 --TODO: Giant ugly monolith of a function eww eww eww.
 function ENT:AttackNearbyTargets(radius)
-	local attackForce = npc_pingu_attack_force:GetInt()
+	local attackForce = npc_cursed_pingu_attack_force:GetInt()
 	local hitSource = self:LocalToWorld(self:OBBCenter())
 	local nearEntities = ents.FindInSphere(hitSource, radius)
 	local hit = false
@@ -573,7 +573,7 @@ function ENT:AttackNearbyTargets(radius)
 			end
 
 			local hitDirection = (ent:GetPos() - hitSource):GetNormal()
-			-- Give the player a good whack. pingu means business.
+			-- Give the player a good whack. Cursed Pingu means business.
 			-- This is for those with god mode enabled.
 			ent:SetVelocity(hitDirection * attackForce + vector_up * 500)
 
@@ -590,7 +590,7 @@ function ENT:AttackNearbyTargets(radius)
 			-- Hits only count if we dealt some damage.
 			hit = (hit or (newHealth < health))
 		elseif ent:GetMoveType() == MOVETYPE_VPHYSICS then
-			if not npc_pingu_smash_props:GetBool() then continue end
+			if not npc_cursed_pingu_smash_props:GetBool() then continue end
 			if ent:IsVehicle() and IsValid(ent:GetDriver()) then continue end
 
 			-- Knock away any props put in our path.
@@ -694,14 +694,14 @@ function ENT:ClaimHidingSpot(hidingSpot)
 end
 
 local HIGH_JUMP_HEIGHT = 500
-function ENT:AtpingutJumpAtTarget()
+function ENT:Atcursed_pingutJumpAtTarget()
 	-- No double-jumping.
 	if not self:IsOnGround() then return end
 
 	local targetPos = self.CurrentTarget:GetPos()
 	local xyDistSqr = (targetPos - self:GetPos()):Length2DSqr()
 	local zDifference = targetPos.z - self:GetPos().z
-	local maxAttackDistance = npc_pingu_attack_distance:GetInt()
+	local maxAttackDistance = npc_cursed_pingu_attack_distance:GetInt()
 	if xyDistSqr <= math.pow(maxAttackDistance + 200, 2)
 		and zDifference >= maxAttackDistance
 	then
@@ -768,7 +768,7 @@ function ENT:BehaveUpdate(delta) --TODO: Split this up more. Eww.
 		self:SetRaging(false)
 	end
 
-	local scanInterval = npc_pingu_expensive_scan_interval:GetFloat()
+	local scanInterval = npc_cursed_pingu_expensive_scan_interval:GetFloat()
 	if currentTime - self.LastTargetSearch > scanInterval then
 		local target = self:GetNearestTarget()
 
@@ -790,9 +790,9 @@ function ENT:BehaveUpdate(delta) --TODO: Split this up more. Eww.
 		self.LastHidingPlaceScan = 0
 
 		-- Attack anyone nearby while we're rampaging.
-		local attackInterval = npc_pingu_attack_interval:GetFloat()
+		local attackInterval = npc_cursed_pingu_attack_interval:GetFloat()
 		if currentTime - self.LastAttack > attackInterval then
-			local attackDistance = npc_pingu_attack_distance:GetInt()
+			local attackDistance = npc_cursed_pingu_attack_distance:GetInt()
 			if self:AttackNearbyTargets(attackDistance) then
 				if currentTime - self.LastTaunt > TAUNT_INTERVAL then
 					self.LastTaunt = currentTime
@@ -813,7 +813,7 @@ function ENT:BehaveUpdate(delta) --TODO: Split this up more. Eww.
 		end
 
 		-- Recompute the path to the target every so often.
-		local repathInterval = npc_pingu_chase_repath_interval:GetFloat()
+		local repathInterval = npc_cursed_pingu_chase_repath_interval:GetFloat()
 		if currentTime - self.LastPathRecompute > repathInterval then
 			self.LastPathRecompute = currentTime
 			self:RecomputeTargetPath()
@@ -823,14 +823,14 @@ function ENT:BehaveUpdate(delta) --TODO: Split this up more. Eww.
 		self.MovePath:Update(self)
 
 		-- Try to jump at a target in the air.
-		if self:IsOnGround() and npc_pingu_allow_jump:GetBool()
+		if self:IsOnGround() and npc_cursed_pingu_allow_jump:GetBool()
 			and currentTime - self.LastJumpScan >= scanInterval
 		then
-			self:AtpingutJumpAtTarget()
+			self:Atcursed_pingutJumpAtTarget()
 			self.LastJumpScan = currentTime
 		end
 	else
-		local hidingScanInterval = npc_pingu_hiding_scan_interval:GetFloat()
+		local hidingScanInterval = npc_cursed_pingu_hiding_scan_interval:GetFloat()
 		if currentTime - self.LastHidingPlaceScan >= hidingScanInterval then
 			self.LastHidingPlaceScan = currentTime
 
@@ -840,7 +840,7 @@ function ENT:BehaveUpdate(delta) --TODO: Split this up more. Eww.
 		end
 
 		if self.HidingSpot ~= nil then
-			local hidingInterval = npc_pingu_hiding_repath_interval:GetFloat()
+			local hidingInterval = npc_cursed_pingu_hiding_repath_interval:GetFloat()
 			if currentTime - self.LastPathRecompute >= hidingInterval then
 				self.LastPathRecompute = currentTime
 				self.MovePath:Compute(self, self.HidingSpot.pos)
@@ -905,18 +905,18 @@ end
 else -- CLIENT --
 
 
-local MAT_pingu = Material("npc_pingu/pingu")
-local MAT_pingu_raging = Material("npc_pingu/pingu_raging")
-local MAT_pingu_still = Material("npc_pingu/pingu_still")
-killicon.Add("npc_pingu", "npc_pingu/killicon", color_white)
-language.Add("npc_pingu", "Cursed Pingu")
+local MAT_cursed_pingu = Material("npc_cursed_pingu/cursed_pingu")
+local MAT_cursed_pingu_raging = Material("npc_cursed_pingu/cursed_pingu_raging")
+local MAT_cursed_pingu_still = Material("npc_cursed_pingu/cursed_pingu_still")
+killicon.Add("npc_cursed_pingu", "npc_cursed_pingu/killicon", color_white)
+language.Add("npc_cursed_pingu", "Cursed Pingu")
 
 ENT.RenderGroup = RENDERGROUP_TRANSLUCENT
 
 local developer = GetConVar("developer")
 local function DevPrint(devLevel, msg)
 	if developer:GetInt() >= devLevel then
-		DebugInfo("npc_pingu: " .. msg)
+		DebugInfo("npc_cursed_pingu: " .. msg)
 	end
 end
 
@@ -934,7 +934,7 @@ local modifyColoursConf = {
 	[ "$pp_colour_mulb" ] = 0
 }
 
-hook.Add( "RenderScreenspaceEffects", "postprocess_pingu_proximity", function()
+hook.Add( "RenderScreenspaceEffects", "postprocess_cursed_pingu_proximity", function()
 	modifyColoursConf["$pp_colour_brightness"] = 0 - 0.25 * viewAlteration
 	modifyColoursConf["$pp_colour_contrast"] = 1 + 0.25 * viewAlteration
 	modifyColoursConf["$pp_colour_colour"] = 1 - 0.25 * viewAlteration
@@ -943,15 +943,15 @@ hook.Add( "RenderScreenspaceEffects", "postprocess_pingu_proximity", function()
 end )
 
 local panicMusic = nil
-local lastPanic = 0 -- The last time we were in music range of a pingu.
+local lastPanic = 0 -- The last time we were in music range of a Cursed Pingu.
 
 --TODO: Why don't these flags show up? Bug? Documentation would be lovely.
-local npc_pingu_music_volume =
-	CreateConVar("npc_pingu_music_volume", 1,
+local npc_cursed_pingu_music_volume =
+	CreateConVar("npc_cursed_pingu_music_volume", 1,
 	bit.bor(FCVAR_DEMO, FCVAR_ARCHIVE),
-	"Maximum music volume when being chased by pingu. (0-1, where 0 is muted)")
+	"Maximum music volume when being chased by Cursed Pingu. (0-1, where 0 is muted)")
 
--- If another pingu comes in range before this delay is up,
+-- If another Cursed Pingu comes in range before this delay is up,
 -- the music will continue where it left off.
 local MUSIC_RESTART_DELAY = 2
 
@@ -975,10 +975,10 @@ local function alteration(distance)
 end
 
 local function updatePanicMusic()
-	if #ents.FindByClass("npc_pingu") == 0 then
+	if #ents.FindByClass("npc_cursed_pingu") == 0 then
 		-- Whoops. No need to run for now.
 		DevPrint(4, "Halting music timer.")
-		timer.Remove("pinguPanicMusicUpdate")
+		timer.Remove("cursed_pinguPanicMusicUpdate")
 
 		if panicMusic ~= nil then
 			panicMusic:Stop()
@@ -1001,7 +1001,7 @@ local function updatePanicMusic()
 	local minDistance = MAX_DISTANCE
 	local nearEntities = ents.FindInSphere(LocalPlayer():GetPos(), MAX_DISTANCE)
 	for _, ent in pairs(nearEntities) do
-		if IsValid(ent) and ent:GetClass() == "npc_pingu" then
+		if IsValid(ent) and ent:GetClass() == "npc_cursed_pingu" then
 			local distance = LocalPlayer():GetPos():Distance(ent:GetPos())
 			minDistance = math.min(minDistance, distance)
 		end
@@ -1010,7 +1010,7 @@ local function updatePanicMusic()
 	viewAlteration = alteration(minDistance)
 
 	local shouldRestartMusic = (CurTime() - lastPanic >= MUSIC_RESTART_DELAY)
-	local userVolume = math.Clamp(npc_pingu_music_volume:GetFloat(), 0, 1)
+	local userVolume = math.Clamp(npc_cursed_pingu_music_volume:GetFloat(), 0, 1)
 	local musicVolume = viewAlteration * userVolume
 	if musicVolume == 0 then
 		if shouldRestartMusic then
@@ -1018,7 +1018,7 @@ local function updatePanicMusic()
 		end
 	else
 		if not LocalPlayer():Alive() then
-			-- Quiet down so we can hear pingu taunt us.
+			-- Quiet down so we can hear Cursed Pingu taunt us.
 			musicVolume = musicVolume / 4
 		end
 		musicVolume = math.max(MIN_VOLUME, musicVolume)
@@ -1035,8 +1035,8 @@ local function updatePanicMusic()
 end
 
 local function startTimer()
-	if not timer.Exists("pinguPanicMusicUpdate") then
-		timer.Create("pinguPanicMusicUpdate", 0.05, REPEAT_FOREVER, updatePanicMusic)
+	if not timer.Exists("cursed_pinguPanicMusicUpdate") then
+		timer.Create("cursed_pinguPanicMusicUpdate", 0.05, REPEAT_FOREVER, updatePanicMusic)
 		DevPrint(4, "Beginning music timer.")
 	end
 end
@@ -1058,14 +1058,14 @@ function ENT:DrawTranslucent()
 	local moving = self:GetMoving()
 	
 	if ( raging ) then
-		render.SetMaterial(MAT_pingu_raging)
+		render.SetMaterial(MAT_cursed_pingu_raging)
 	elseif ( moving ) then
-		render.SetMaterial(MAT_pingu)
+		render.SetMaterial(MAT_cursed_pingu)
 	else
-		render.SetMaterial(MAT_pingu_still)
+		render.SetMaterial(MAT_cursed_pingu_still)
 	end
 
-	-- Get the normal vector from pingu to the player's eyes, and then compute
+	-- Get the normal vector from Cursed Pingu to the player's eyes, and then compute
 	-- a corresponding projection onto the xy-plane.
 	local pos = self:GetPos() + DRAW_OFFSET
 	local normal = EyePos() - pos
@@ -1073,7 +1073,7 @@ function ENT:DrawTranslucent()
 	local xyNormal = Vector(normal.x, normal.y, 0)
 	xyNormal:Normalize()
 
-	-- pingu should only look 1/3 of the way up to the player so that they
+	-- Cursed Pingu should only look 1/3 of the way up to the player so that they
 	-- don't appear to lay flat from above.
 	local pitch = math.acos(math.Clamp(normal:Dot(xyNormal), -1, 1)) / 3
 	local cos = math.cos(pitch)
@@ -1087,12 +1087,12 @@ function ENT:DrawTranslucent()
 		color_white, 180)
 end
 
-surface.CreateFont("pinguHUD", {
+surface.CreateFont("cursed_pinguHUD", {
 	font = "Arial",
 	size = 56
 })
 
-surface.CreateFont("pinguHUDSmall", {
+surface.CreateFont("cursed_pinguHUDSmall", {
 	font = "Arial",
 	size = 24
 })
@@ -1137,19 +1137,19 @@ local flavourText = ""
 local lastBracket = 0
 local generateStart = 0
 local function navGenerateHUDOverlay()
-	draw.SimpleTextOutlined("pingu is studying this map.", "pinguHUD",
+	draw.SimpleTextOutlined("Cursed Pingu is studying this map.", "cursed_pinguHUD",
 		ScrW() / 2, ScrH() / 2, color_white,
 		TEXT_ALIGN_CENTER, TEXT_ALIGN_TOP, 2, color_black)
-	draw.SimpleTextOutlined("Please wait...", "pinguHUD",
+	draw.SimpleTextOutlined("Please wait...", "cursed_pinguHUD",
 		ScrW() / 2, ScrH() / 2, color_white,
 		TEXT_ALIGN_CENTER, TEXT_ALIGN_BOTTOM, 2, color_black)
 
 	local elapsed = SysTime() - generateStart
 	local elapsedStr = string_ToHMS(elapsed)
-	draw.SimpleTextOutlined("Time Elapsed:", "pinguHUDSmall",
+	draw.SimpleTextOutlined("Time Elapsed:", "cursed_pinguHUDSmall",
 		ScrW() / 2, ScrH() * 3/4, color_white,
 		TEXT_ALIGN_CENTER, TEXT_ALIGN_BOTTOM, 1, color_black)
-	draw.SimpleTextOutlined(elapsedStr, "pinguHUDSmall",
+	draw.SimpleTextOutlined(elapsedStr, "cursed_pinguHUDSmall",
 		ScrW() / 2, ScrH() * 3/4, color_white,
 		TEXT_ALIGN_CENTER, TEXT_ALIGN_TOP, 1, color_black)
 
@@ -1159,19 +1159,19 @@ local function navGenerateHUDOverlay()
 		flavourText = table.Random(flavourTexts[math.min(5, textBracket)])
 		lastBracket = textBracket
 	end
-	draw.SimpleTextOutlined(flavourText, "pinguHUDSmall",
+	draw.SimpleTextOutlined(flavourText, "cursed_pinguHUDSmall",
 		ScrW() / 2, ScrH() * 4/5, color_yellow,
 		TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER, 1, color_black)
 end
 
-net.Receive("pingu_navgen", function()
+net.Receive("cursed_pingu_navgen", function()
 	local startSuccess = net.ReadBool()
 	if startSuccess then
 		generateStart = SysTime()
 		lastBracket = 0
-		hook.Add("HUDPaint", "pinguNavGenOverlay", navGenerateHUDOverlay)
+		hook.Add("HUDPaint", "cursed_pinguNavGenOverlay", navGenerateHUDOverlay)
 	else
-		Derma_Message("Oh no. pingu doesn't even know where to start with \z
+		Derma_Message("Oh no. Cursed Pingu doesn't even know where to start with \z
 		this map.\n\z
 		If you're not running the Sandbox gamemode, switch to that and try \z
 		again.", "Error!")
@@ -1181,7 +1181,7 @@ end)
 local nagMe = true
 
 local function requestNavGenerate()
-	RunConsoleCommand("npc_pingu_learn")
+	RunConsoleCommand("npc_cursed_pingu_learn")
 end
 
 local function stopNagging()
@@ -1189,7 +1189,7 @@ local function stopNagging()
 end
 
 local function navWarning()
-	Derma_Query("It will take a while (possibly hours) for pingu to figure \z
+	Derma_Query("It will take a while (possibly hours) for Cursed Pingu to figure \z
 		this map out.\n\z
 		While he's studying it, you won't be able to play,\n\z
 		and the game will appear to have frozen/crashed.\n\z
@@ -1200,30 +1200,30 @@ local function navWarning()
 		"Not right now.", nil)
 end
 
-net.Receive("pingu_nag", function()
+net.Receive("cursed_pingu_nag", function()
 	if not nagMe then return end
 
 	if game.SinglePlayer() then
-		Derma_Query("Uh oh! pingu doesn't know this map.\n\z
+		Derma_Query("Uh oh! Cursed Pingu doesn't know this map.\n\z
 			Would you like him to learn it?",
-			"This map is not yet pingu-compatible!",
+			"This map is not yet Cursed Pingu-compatible!",
 			"Yes", navWarning,
 			"No", nil,
 			"No. Don't ask again.", stopNagging)
 	else
-		Derma_Query("Uh oh! pingu doesn't know this map. \z
+		Derma_Query("Uh oh! Cursed Pingu doesn't know this map. \z
 			He won't be able to move!\n\z
 			Because you're not in a single-player game, he isn't able to \z
 			learn it.\n\z
 			\n\z
-			Ask the server host about teaching this map to pingu.\n\z
+			Ask the server host about teaching this map to Cursed Pingu.\n\z
 			\n\z
-			If you ARE the server host, you can run npc_pingu_learn over \z
+			If you ARE the server host, you can run npc_cursed_pingu_learn over \z
 			rcon.\n\z
 			Keep in mind that it may take hours during which you will be \z
 			unable\n\z
 			to play, and THE MAP WILL BE RESTARTED.",
-			"This map is currently not pingu-compatible!",
+			"This map is currently not Cursed Pingu-compatible!",
 			"Ok", nil,
 			"Ok. Don't say this again.", stopNagging)
 	end
@@ -1234,9 +1234,9 @@ end
 --
 -- List the NPC as spawnable.
 --
-list.Set("NPC", "npc_pingu", {
-	Name = "pingu",
-	Class = "npc_pingu",
+list.Set("NPC", "npc_cursed_pingu", {
+	Name = "Cursed Pingu",
+	Class = "npc_cursed_pingu",
 	Category = "Nextbot",
 	AdminOnly = true
 })

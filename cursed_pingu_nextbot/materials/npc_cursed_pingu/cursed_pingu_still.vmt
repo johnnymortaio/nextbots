@@ -1,6 +1,6 @@
 "UnlitGeneric"
 {
-	"$basetexture" "npc_pingu/pingu_still"
+	"$basetexture" "npc_cursed_pingu/cursed_pingu_still"
 	"$alphatest" 1
 
 	"Proxies"
