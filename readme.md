@@ -30,7 +30,7 @@ Same features as Stalin's Nextbot, but with an animated texture and multiple sou
 
 ### Cursed Pingu
 
-This is cursed.
+This one is cursed.
 
 Do not try it.
 

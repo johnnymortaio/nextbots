@@ -916,9 +916,31 @@ ENT.RenderGroup = RENDERGROUP_TRANSLUCENT
 local developer = GetConVar("developer")
 local function DevPrint(devLevel, msg)
 	if developer:GetInt() >= devLevel then
-		print("npc_pingu: " .. msg)
+		DebugInfo("npc_pingu: " .. msg)
 	end
 end
+
+local viewAlteration = 0
+
+local modifyColoursConf = {
+	[ "$pp_colour_addr" ] = 0,
+	[ "$pp_colour_addg" ] = 0,
+	[ "$pp_colour_addb" ] = 0,
+	[ "$pp_colour_brightness" ] = 0,
+	[ "$pp_colour_contrast" ] = 1,
+	[ "$pp_colour_colour" ] = 1,
+	[ "$pp_colour_mulr" ] = 0,
+	[ "$pp_colour_mulg" ] = 0,
+	[ "$pp_colour_mulb" ] = 0
+}
+
+hook.Add( "RenderScreenspaceEffects", "postprocess_pingu_proximity", function()
+	modifyColoursConf["$pp_colour_brightness"] = 0 - 0.25 * viewAlteration
+	modifyColoursConf["$pp_colour_contrast"] = 1 + 0.25 * viewAlteration
+	modifyColoursConf["$pp_colour_colour"] = 1 - 0.25 * viewAlteration
+	DrawColorModify( modifyColoursConf )
+	DrawMotionBlur(1 - 0.75 * viewAlteration, 1 - 0.02 * viewAlteration , 0.05 * viewAlteration)
+end )
 
 local panicMusic = nil
 local lastPanic = 0 -- The last time we were in music range of a pingu.
@@ -933,9 +955,9 @@ local npc_pingu_music_volume =
 -- the music will continue where it left off.
 local MUSIC_RESTART_DELAY = 2
 
-local MUSIC_CUTOFF_DISTANCE = 2000
+local MUSIC_CUTOFF_DISTANCE = 2500
 
-local MUSIC_LOUD_DISTANCE = 200
+local MUSIC_LOUD_DISTANCE = 250
 
 local MIN_VOLUME = 0.01
 
@@ -943,7 +965,7 @@ local MUSIC_RANGE = MUSIC_CUTOFF_DISTANCE - MUSIC_LOUD_DISTANCE
 
 local MAX_DISTANCE = MUSIC_CUTOFF_DISTANCE
 
-local function musicVolume(distance)
+local function alteration(distance)
 	if distance > MUSIC_CUTOFF_DISTANCE then
 		return 0
 	end
@@ -961,6 +983,8 @@ local function updatePanicMusic()
 		if panicMusic ~= nil then
 			panicMusic:Stop()
 		end
+
+		viewAlteration = 0
 
 		return
 	end
@@ -983,9 +1007,11 @@ local function updatePanicMusic()
 		end
 	end
 
+	viewAlteration = alteration(minDistance)
+
 	local shouldRestartMusic = (CurTime() - lastPanic >= MUSIC_RESTART_DELAY)
 	local userVolume = math.Clamp(npc_pingu_music_volume:GetFloat(), 0, 1)
-	local musicVolume = musicVolume(minDistance) * userVolume
+	local musicVolume = viewAlteration * userVolume
 	if musicVolume == 0 then
 		if shouldRestartMusic then
 			panicMusic:Stop()
