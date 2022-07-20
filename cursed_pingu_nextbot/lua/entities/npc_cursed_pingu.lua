@@ -800,6 +800,8 @@ function ENT:BehaveUpdate(delta) --TODO: Split this up more. Eww.
 					self:EmitSound(table.Random(self.TauntSounds), 350, 100)
 				end
 
+				effects.BeamRingPoint(self:GetPos(), 0.5, 0, 1000, 100, 10, {r=100, g=0, b=0, a=200}, {})
+
 				-- Immediately look for another target.
 				self.LastTargetSearch = 0
 			else
