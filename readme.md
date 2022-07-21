@@ -3,7 +3,7 @@
 This repo contains some custom [Nextbots](https://wiki.facepunch.com/gmod/NextBot_NPC_Creation), which are described below.
 Moreover, here you can find the documented steps to make your own bot.
 
-![Stalin's Nextbot](https://i.giphy.com/media/TfrRHDgovbCqiQZfWk/giphy.webp)
+![Noot noot](https://media1.giphy.com/media/mVV95S4e083h4HeGBr/giphy.gif?cid=790b7611c64ede89f31888d62ebfb4532455f785c55642f2&rid=giphy.gif&ct=g)
 
 ## Disclaimer and Attributions
 
@@ -33,8 +33,6 @@ Same features as Stalin's Nextbot, but with an animated texture and multiple sou
 This one is cursed.
 
 Do not try it.
-
-![Noot noot](https://media1.giphy.com/media/mVV95S4e083h4HeGBr/giphy.gif?cid=790b7611c64ede89f31888d62ebfb4532455f785c55642f2&rid=giphy.gif&ct=g)
 
 ## Development
 
@@ -78,5 +76,3 @@ Now you have to perform some final steps:
   * on the workshop page, change your item visibility (hidden by default) and add a description and some screenshots of your creation
 
 ## Enjoy
-
-![Off to gulag now](https://c.tenor.com/ZT28EZnoYEwAAAAC/off-to-gulag-gulag.gif)
