@@ -113,11 +113,13 @@ local npc_cursed_pingu_force_download =
 	hear Cursed Pingu!")
 
  -- So we don't spam voice TOO much.
-local TAUNT_INTERVAL = 1.2
+local TAUNT_INTERVAL = 2
 local PATH_INFRACTION_TIMEOUT = 5
 local CHASE_SOUND_INTERVAL = 8
 local SPEED_THRESHOLD = 1
 local SPEED_THRESHOLD_SQUARED = SPEED_THRESHOLD * SPEED_THRESHOLD
+local SPAWN_PROTECTION_RADIUS = 200
+local SPAWN_PROTECTION_TIME = 5
 
 if npc_cursed_pingu_force_download:GetBool() then
 	resource.AddWorkshop(workshopID)
@@ -477,9 +479,9 @@ end
 
 function ENT:UpdateMovingStatus(delta)
 	local currentPos = self:GetPos()
-	local speed = (currentPos - self.lastTrackedPos):Length2DSqr() / (delta * delta)
+	local speedSqr = currentPos:DistToSqr(self.lastTrackedPos) / (delta * delta)
 	self.lastTrackedPos = currentPos
-	if ( speed < SPEED_THRESHOLD_SQUARED ) then
+	if ( speedSqr < SPEED_THRESHOLD_SQUARED ) then
 		if self:GetMoving() then
 			self:SetMoving( false )
 		end
@@ -501,32 +503,29 @@ function ENT:UpdateStepsSound()
 	end
 end
 
+local playersLatestSpawnTime = {}
+local function trackPlayersSpawnTime(ply)
+	playersLatestSpawnTime[ply:SteamID64()] = CurTime()
+end
+hook.Add("PlayerSpawn", "track_players_spawn_time", trackPlayersSpawnTime)
+
+local function isPlayerSpawnProtected(ply)
+	return npc_cursed_pingu_spawn_protect:GetBool()
+	   and isPointNearSpawn(ply:GetPos(), SPAWN_PROTECTION_RADIUS)
+	   and (CurTime() - playersLatestSpawnTime[ply:SteamID64()] <= SPAWN_PROTECTION_TIME)
+end
+
 function ENT:GetNearestTarget()
-	-- Only target entities within the acquire distance.
 	local maxAcquireDist = npc_cursed_pingu_acquire_distance:GetInt()
 	local maxAcquireDistSqr = maxAcquireDist * maxAcquireDist
 	local myPos = self:GetPos()
-	local acquirableEntities = ents.FindInSphere(myPos, maxAcquireDist)
-	local distToSqr = myPos.DistToSqr
-	local getPos = self.GetPos
 	local target = nil
-	local getClass = self.GetClass
 
-	for _, ent in pairs(acquirableEntities) do
-		-- Ignore invalid targets, of course.
+	for _, ent in pairs(ents.FindInSphere(myPos, maxAcquireDist)) do
 		if not isValidTarget(ent) then continue end
+		if ent:IsPlayer() and isPlayerSpawnProtected(ent) then continue end
 
-		-- Spawn protection! Ignore players within 200 units of a spawn point
-		-- if `npc_cursed_pingu_spawn_protect' = 1.
-		--TODO: Only for the first few seconds?
-		if npc_cursed_pingu_spawn_protect:GetBool() and ent:IsPlayer()
-			and isPointNearSpawn(ent:GetPos(), 200)
-		then
-			continue
-		end
-
-		-- Find the nearest target to chase.
-		local distSqr = distToSqr(getPos(ent), myPos)
+		local distSqr = myPos:DistToSqr(ent:GetPos())
 		if distSqr < maxAcquireDistSqr then
 			target = ent
 			maxAcquireDistSqr = distSqr
@@ -536,7 +535,6 @@ function ENT:GetNearestTarget()
 	return target
 end
 
---TODO: Giant ugly monolith of a function eww eww eww.
 function ENT:AttackNearbyTargets(radius)
 	local attackForce = npc_cursed_pingu_attack_force:GetInt()
 	local hitSource = self:LocalToWorld(self:OBBCenter())
@@ -547,13 +545,9 @@ function ENT:AttackNearbyTargets(radius)
 			local health = ent:Health()
 
 			if ent:IsPlayer() and IsValid(ent:GetVehicle()) then
-				-- Hiding in a vehicle, eh?
 				local vehicle = ent:GetVehicle()
-
 				local vehiclePos = vehicle:LocalToWorld(vehicle:OBBCenter())
 				local hitDirection = (vehiclePos - hitSource):GetNormal()
-
-				-- Give it a good whack.
 				local phys = vehicle:GetPhysicsObject()
 				if IsValid(phys) then
 					phys:Wake()
@@ -561,20 +555,12 @@ function ENT:AttackNearbyTargets(radius)
 					phys:ApplyForceOffset(hitDirection * (attackForce * phys:GetMass()), hitOffset)
 				end
 				vehicle:TakeDamage(math.max(1e8, ent:Health()), self, self)
-
-				-- Oh, and make a nice SMASH noise.
-				vehicle:EmitSound(string.format(
-					"physics/metal/metal_sheet_impact_hard%d.wav",
-					math.random(6, 8)), 350, 120)
+				vehicle:EmitSound(string.format("physics/metal/metal_sheet_impact_hard%d.wav",	math.random(6, 8)), 350, 120)
 			else
-				ent:EmitSound(string.format(
-					"physics/body/body_medium_impact_hard%d.wav",
-					math.random(1, 6)), 350, 120)
+				ent:EmitSound(string.format("physics/body/body_medium_impact_hard%d.wav", math.random(1, 6)), 350, 120)
 			end
 
 			local hitDirection = (ent:GetPos() - hitSource):GetNormal()
-			-- Give the player a good whack. Cursed Pingu means business.
-			-- This is for those with god mode enabled.
 			ent:SetVelocity(hitDirection * attackForce + vector_up * 500)
 
 			local dmgInfo = DamageInfo()
@@ -586,23 +572,16 @@ function ENT:AttackNearbyTargets(radius)
 			ent:TakeDamageInfo(dmgInfo)
 
 			local newHealth = ent:Health()
-
-			-- Hits only count if we dealt some damage.
 			hit = (hit or (newHealth < health))
 		elseif ent:GetMoveType() == MOVETYPE_VPHYSICS then
 			if not npc_cursed_pingu_smash_props:GetBool() then continue end
 			if ent:IsVehicle() and IsValid(ent:GetDriver()) then continue end
 
-			-- Knock away any props put in our path.
 			local entPos = ent:LocalToWorld(ent:OBBCenter())
 			local hitDirection = (entPos - hitSource):GetNormal()
 			local hitOffset = ent:NearestPoint(hitSource)
-
-			-- Remove anything tying the entity down.
-			-- We're crashing through here!
 			constraint.RemoveAll(ent)
 
-			-- Get the object's mass.
 			local phys = ent:GetPhysicsObject()
 			local mass = 0
 			local material = "Default"
@@ -611,23 +590,18 @@ function ENT:AttackNearbyTargets(radius)
 				material = phys:GetMaterial()
 			end
 
-			-- Don't make a noise if the object is too light.
-			-- It's probably a gib.
 			if mass >= 5 then
 				ent:EmitSound(material .. ".ImpactHard", 350, 120)
 			end
 
-			-- Unfreeze all bones, and give the object a good whack.
 			for id = 0, ent:GetPhysicsObjectCount() - 1 do
 				local phys = ent:GetPhysicsObjectNum(id)
 				if IsValid(phys) then
 					phys:EnableMotion(true)
-					phys:ApplyForceOffset(hitDirection * (attackForce * mass),
-						hitOffset)
+					phys:ApplyForceOffset(hitDirection * (attackForce * mass), hitOffset)
 				end
 			end
 
-			-- Deal some solid damage, too.
 			ent:TakeDamage(25, self, self)
 		end
 	end
@@ -636,13 +610,8 @@ function ENT:AttackNearbyTargets(radius)
 end
 
 function ENT:IsHidingSpotFull(hidingSpot)
-	-- It's not full if there's no occupant, or we're the one in it.
 	local occupant = hidingSpot.occupant
-	if not IsValid(occupant) or occupant == self then
-		return false
-	end
-
-	return true
+	return (IsValid(occupant) and occupant ~= self)
 end
 
 --TODO: Weight spots based on how many people can see them.
@@ -694,7 +663,7 @@ function ENT:ClaimHidingSpot(hidingSpot)
 end
 
 local HIGH_JUMP_HEIGHT = 500
-function ENT:Atcursed_pingutJumpAtTarget()
+function ENT:AdaptiveJumpAtTarget()
 	-- No double-jumping.
 	if not self:IsOnGround() then return end
 
@@ -756,111 +725,100 @@ function ENT:BehaveStart()
 end
 
 local ai_disabled = GetConVar("ai_disabled")
-function ENT:BehaveUpdate(delta) --TODO: Split this up more. Eww.
-	if ai_disabled:GetBool() then
-		-- We may be a bot, but we're still an "NPC" at heart.
-		return
-	end
+
+function ENT:BehaveUpdate(delta)
+	self:UpdateMovingStatus(delta)
+	self:UpdateStepsSound()
+
+	if ai_disabled:GetBool() then return end
 
 	local currentTime = CurTime()
 
 	if ( self:GetRaging() and (currentTime - self.LastTaunt > TAUNT_INTERVAL) ) then
 		self:SetRaging(false)
+		self.LastTargetSearch = 0
+		self.LastHidingPlaceScan = 0
 	end
 
-	local scanInterval = npc_cursed_pingu_expensive_scan_interval:GetFloat()
-	if currentTime - self.LastTargetSearch > scanInterval then
-		local target = self:GetNearestTarget()
+	if self:GetRaging() then
+		return
+	end
 
+	local shouldScanForTargets = currentTime - self.LastTargetSearch > npc_cursed_pingu_expensive_scan_interval:GetFloat()
+	if shouldScanForTargets then
+		local target = self:GetNearestTarget()
 		if target ~= self.CurrentTarget then
-			-- We have a new target! Figure out a new path immediately.
+			self.CurrentTarget = target
 			self.LastPathRecompute = 0
 		end
-
-		self.CurrentTarget = target
 		self.LastTargetSearch = currentTime
 	end
 
-	self:UpdateMovingStatus(delta)
-	self:UpdateStepsSound()
-
-	-- Do we have a target?
 	if IsValid(self.CurrentTarget) then
-		-- Be ready to repath to a hiding place as soon as we lose target.
-		self.LastHidingPlaceScan = 0
-
-		-- Attack anyone nearby while we're rampaging.
-		local attackInterval = npc_cursed_pingu_attack_interval:GetFloat()
-		if currentTime - self.LastAttack > attackInterval then
+		local mayAttack = currentTime - self.LastAttack > npc_cursed_pingu_attack_interval:GetFloat()
+		if mayAttack then
 			local attackDistance = npc_cursed_pingu_attack_distance:GetInt()
 			if self:AttackNearbyTargets(attackDistance) then
-				if currentTime - self.LastTaunt > TAUNT_INTERVAL then
-					self.LastTaunt = currentTime
-					self:SetRaging(true)
-					self:EmitSound(table.Random(self.TauntSounds), 350, 100)
-				end
-
+				self:SetRaging(true)
+				self:EmitSound(table.Random(self.TauntSounds), 350, 100)
 				effects.BeamRingPoint(self:GetPos(), 0.5, 0, 1000, 100, 10, {r=100, g=0, b=0, a=200}, {})
-
-				-- Immediately look for another target.
-				self.LastTargetSearch = 0
-			else
-				if currentTime - self.LastChaseSound > CHASE_SOUND_INTERVAL then
-					self.LastChaseSound = currentTime
-					self:EmitSound(table.Random(self.ChaseSounds), 350, 100)
-				end
+				self.LastTaunt = currentTime
+				self.CurrentTarget = nil
 			end
-
 			self.LastAttack = currentTime
 		end
+	end
 
-		-- Recompute the path to the target every so often.
-		local repathInterval = npc_cursed_pingu_chase_repath_interval:GetFloat()
-		if currentTime - self.LastPathRecompute > repathInterval then
-			self.LastPathRecompute = currentTime
-			self:RecomputeTargetPath()
+	if IsValid(self.CurrentTarget) then
+		local canShoutChaseSounds = currentTime - self.LastChaseSound > CHASE_SOUND_INTERVAL
+		if canShoutChaseSounds then
+			self:EmitSound(table.Random(self.ChaseSounds), 350, 100)
+			self.LastChaseSound = currentTime + math.Rand(0, CHASE_SOUND_INTERVAL / 2)
 		end
 
-		-- Move!
+		local mustRepathChase = currentTime - self.LastPathRecompute > npc_cursed_pingu_chase_repath_interval:GetFloat()
+		if mustRepathChase then
+			self:RecomputeTargetPath()
+			self.LastPathRecompute = currentTime
+		end
+
 		self.MovePath:Update(self)
 
-		-- Try to jump at a target in the air.
-		if self:IsOnGround() and npc_cursed_pingu_allow_jump:GetBool()
-			and currentTime - self.LastJumpScan >= scanInterval
-		then
-			self:Atcursed_pingutJumpAtTarget()
+		local isAllowedToJump = self:IsOnGround() and npc_cursed_pingu_allow_jump:GetBool() and currentTime - self.LastJumpScan >= npc_cursed_pingu_expensive_scan_interval:GetFloat()
+		if isAllowedToJump then
+			self:AdaptiveJumpAtTarget()
 			self.LastJumpScan = currentTime
 		end
 	else
-		local hidingScanInterval = npc_cursed_pingu_hiding_scan_interval:GetFloat()
-		if currentTime - self.LastHidingPlaceScan >= hidingScanInterval then
+		local maySearchNewHidingSpot = currentTime - self.LastHidingPlaceScan >= npc_cursed_pingu_hiding_scan_interval:GetFloat()
+		if maySearchNewHidingSpot then
+			self:ClaimHidingSpot(self:GetNearestUsableHidingSpot())
 			self.LastHidingPlaceScan = currentTime
-
-			-- Grab a new hiding spot.
-			local hidingSpot = self:GetNearestUsableHidingSpot()
-			self:ClaimHidingSpot(hidingSpot)
 		end
 
 		if self.HidingSpot ~= nil then
-			local hidingInterval = npc_cursed_pingu_hiding_repath_interval:GetFloat()
-			if currentTime - self.LastPathRecompute >= hidingInterval then
-				self.LastPathRecompute = currentTime
+			local mustRepathHidingSpot = currentTime - self.LastPathRecompute >= npc_cursed_pingu_hiding_repath_interval:GetFloat()
+			if mustRepathHidingSpot then
 				self.MovePath:Compute(self, self.HidingSpot.pos)
+				self.LastPathRecompute = currentTime
 			end
 			self.MovePath:Update(self)
+			local canShoutHiddenSounds = (currentTime - self.LastChaseSound > CHASE_SOUND_INTERVAL) and (self:GetPos():DistToSqr(self.HidingSpot.pos) < 100)
+			if canShoutHiddenSounds then
+				self:EmitSound(table.Random(self.TauntSounds), 350, 100)
+				self.LastChaseSound = currentTime + math.Rand(0, CHASE_SOUND_INTERVAL / 2)
+			end
 		else
-			--TODO: Wander if we didn't find a place to hide.
-			-- Preferably AWAY from spawn points.
+			-- TODO: Wander if we didn't find a place to hide, preferably AWAY from spawn points
 		end
 	end
 
-	-- Don't even wait until the STUCK flag is set for this.
-	-- It's much more fluid this way.
-	if currentTime - self.LastCeilingUnstick >= scanInterval then
+	-- Don't even wait until the STUCK flag is set for this: it's much more fluid this way
+	local mayTryToGetUnstuck = currentTime - self.LastCeilingUnstick >= npc_cursed_pingu_expensive_scan_interval:GetFloat()
+	if mayTryToGetUnstuck then
 		self:UnstickFromCeiling()
 		self.LastCeilingUnstick = currentTime
 	end
-
 	if currentTime - self.LastStuck >= 5 then
 		self.StuckTries = 0
 	end
@@ -1059,9 +1017,9 @@ function ENT:DrawTranslucent()
 	local raging = self:GetRaging()
 	local moving = self:GetMoving()
 	
-	if ( raging ) then
+	if raging then
 		render.SetMaterial(MAT_cursed_pingu_raging)
-	elseif ( moving ) then
+	elseif moving then
 		render.SetMaterial(MAT_cursed_pingu)
 	else
 		render.SetMaterial(MAT_cursed_pingu_still)
@@ -1085,8 +1043,7 @@ function ENT:DrawTranslucent()
 		math.sin(pitch)
 	)
 
-	render.DrawQuadEasy(pos, normal, SPRITE_SIZE, SPRITE_SIZE,
-		color_white, 180)
+	render.DrawQuadEasy(pos, normal, SPRITE_SIZE, SPRITE_SIZE, color_white, 180)
 end
 
 surface.CreateFont("cursed_pinguHUD", {
