@@ -512,7 +512,7 @@ hook.Add("PlayerSpawn", "track_players_spawn_time", trackPlayersSpawnTime)
 local function isPlayerSpawnProtected(ply)
 	return npc_cursed_pingu_spawn_protect:GetBool()
 	   and isPointNearSpawn(ply:GetPos(), SPAWN_PROTECTION_RADIUS)
-	   and (CurTime() - playersLatestSpawnTime[ply:SteamID64()] <= SPAWN_PROTECTION_TIME)
+	   and (CurTime() - (playersLatestSpawnTime[ply:SteamID64()] or 0) <= SPAWN_PROTECTION_TIME)
 end
 
 function ENT:GetNearestTarget()
